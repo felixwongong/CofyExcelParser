@@ -9,60 +9,50 @@ public class CofyXmlDocParser
 {
     public static void ReadExcelFile(string filePath)
     {
-        if (string.IsNullOrEmpty(filePath))
+        byte[] loadFileBytes()
         {
-            throw new ArgumentNullException(nameof(filePath), "filename is empty");
+            if (string.IsNullOrEmpty(filePath))
+            {
+                throw new ArgumentNullException(nameof(filePath), "filename is empty");
+            }
+
+            if (!File.Exists(filePath))
+            {
+                throw new ArgumentNullException(nameof(filePath), "file does not exist");
+            }
+
+            byte[] fileBytes;
+            using var filestream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            fileBytes = new byte[filestream.Length];
+            var byteLoaded = filestream.Read(fileBytes, 0, (int)filestream.Length);
+            if (byteLoaded > filestream.Length)
+            {
+                throw new InvalidOperationException(
+                    $"Detect filestream read size ({filestream.Length} differ from byte load ({byteLoaded}))");
+            }
+
+            return fileBytes;
         }
 
-        if (!File.Exists(filePath))
-        {
-            throw new ArgumentNullException(nameof(filePath), "file does not exist");
-        }
-        
-        using var filestream = new FileStream(filePath, FileMode.Open);
-        using var document = SpreadsheetDocument.Open(filestream, false);
-        
-        var workbook = document.WorkbookPart;
-        if (workbook == null)
+        byte[] fileBytes = loadFileBytes();
+
+        using MemoryStream memoryStream = new MemoryStream(fileBytes);
+        using var document = SpreadsheetDocument.Open(memoryStream, false);
+
+        var workbookPart = document.WorkbookPart;
+        if (workbookPart == null)
         {
             throw new InvalidOperationException("Excel does not have a workbook");
         }
 
-        if (workbook.SharedStringTablePart == null)
-        {
-            throw new InvalidOperationException("Excel does not have text value");
-        }
-
-        var worksheets = workbook.WorksheetParts.ToList();
-        if (!worksheets.Any())
-        {
-            throw new InvalidOperationException("Excel workbook does not have a worksheet");
-        }
-
-        var tableStringItems =
-            workbook.SharedStringTablePart.SharedStringTable.Elements<SharedStringItem>();
+        var sheets = workbookPart.Workbook.Descendants<Sheet>().Where(sheet => sheet.State == null || sheet.State == SheetStateValues.Visible );
         
-        OpenXmlReader reader;
-        List<string> cellValues = new();
-        
-        foreach (var worksheet in worksheets)
+        foreach (var sheet in sheets)
         {
-            reader = OpenXmlReader.Create(worksheet);
-            while (reader.Read())
-            {
-                if (reader.ElementType == typeof(CellValue))
-                {
-                    var cellStringTableKey = reader.GetText();
-                    if(string.IsNullOrEmpty(cellStringTableKey)) continue;
-                    Console.Write($"{cellStringTableKey}, ");
-                    cellValues.Add(tableStringItems.ElementAt(Int32.Parse(cellStringTableKey)).Text.Text);
-                }
-            }
-        }
-        
-        foreach (var cellValue in cellValues)
-        {
-            Console.Write($"{cellValue}, ");
+            if (sheet.Id == null || !sheet.Id.HasValue || sheet.Id.Value == null || !sheet.Id.HasValue) continue;
+            
+            var sheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id.Value);
+            
         }
     }
 }
