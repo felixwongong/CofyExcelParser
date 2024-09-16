@@ -9,7 +9,11 @@ public class CofyXmlDocParser
 
     public class DataObject: Dictionary<string, string>
     {
-        public DataObject subDataObject = new();
+        public DataObject subDataObject;
+    }
+
+    public class DataContainer : List<DataObject>
+    {
     }
     
     protected virtual byte[] LoadExcelBytes(string filePath)
@@ -42,7 +46,7 @@ public class CofyXmlDocParser
         return sheet.State == null || sheet.State == SheetStateValues.Visible;
     }
     
-    public void ReadExcelFile(string filePath)
+    public DataContainer ParseExcel(string filePath)
     {
         byte[] fileBytes = LoadExcelBytes(filePath);
 
@@ -56,22 +60,26 @@ public class CofyXmlDocParser
         }
 
         var sheets = workbookPart.Workbook.Descendants<Sheet>().Where(IsSheetAvailable);
-        
+
+        DataContainer rootDataContainer = new();
         foreach (var sheet in sheets)
         {
             if (sheet.Id == null || !sheet.Id.HasValue || sheet.Id.Value == null || !sheet.Id.HasValue)
                 continue;
             
             var sheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id.Value);
-            ProcessSheet(sheetPart.Worksheet, workbookPart);
+            ProcessSheet(sheetPart.Worksheet, workbookPart, rootDataContainer);
         }
+
+        return rootDataContainer;
     }
 
-    protected virtual void ProcessSheet(Worksheet sheet, WorkbookPart workbookPart)
+    protected virtual void ProcessSheet(Worksheet sheet, WorkbookPart workbookPart, in DataContainer rootDataContainer)
     {
         var rows = sheet.Descendants<Row>().Where(r => r.RowIndex is not null);
         
         var headers = new Dictionary<int, string>();    //<columnIndex, headerName>
+        int maxHeaderColumnIndex = -1;
 
         var sharedStringTable = workbookPart.SharedStringTablePart?.SharedStringTable;
         if (sharedStringTable == null)
@@ -81,60 +89,77 @@ public class CofyXmlDocParser
 
         foreach (var row in rows)
         {
-            int columnIndex = 0;
-            
-            ProcessRow();
+            var rowIndex = row.RowIndex?.Value;
+            if(rowIndex == null) continue;
 
-            void ProcessRow()
+            if (rowIndex == HEADER_ROW_INDEX)
             {
-                foreach (var element in row)
+                maxHeaderColumnIndex = ProcessHeaderRow(row);
+            }
+            else
+            {
+                DataObject rowData = new();
+                for (int i = 0; i < maxHeaderColumnIndex; i++)
                 {
-                    if (element is not Cell cell)
+                    if(i >= row.Count()) break;
+                    if (row.ElementAt(i) is not Cell cell)
                     {
                         throw new InvalidCastException(
-                            $"Detected invalid or non cell element ({element.GetType()}) in row");
+                            $"Detected invalid or non cell element ({row.ElementAt(i).GetType()}) in row {rowIndex}");
                     }
 
-                    if (cell.CellReference is { Value: null }) continue;
-
-                    ProcessCell(cell);
-
-                    columnIndex++;
-                }
-            }
-            
-            void ProcessCell(Cell cell)
-            {
-                if(row.RowIndex?.Value == null) return;
-
-                if (row.RowIndex.Value == HEADER_ROW_INDEX)
-                {
-                    if (!headers.TryAdd(columnIndex, GetCellValue(cell)))
+                    if (!headers.TryGetValue(i, out var key))
                     {
-                        throw new ArgumentException($"duplicated header with column index {columnIndex}");
+                        throw new KeyNotFoundException($"Header not found in column index {i}");
                     }
+                    var value = GetCellValue(cell);
+                    rowData[key] = value;
                 }
-                else
+                rootDataContainer.Add(rowData);
+            }
+        }
+
+        int ProcessHeaderRow(Row row)
+        {
+            int columnIndex = 0;
+            foreach (var element in row)
+            {
+                if (element is not Cell cell)
                 {
-                    
+                    throw new InvalidCastException(
+                        $"Detected invalid or non cell element ({element.GetType()}) in header row");
                 }
+
+                if (cell.CellReference is { Value: null }) continue;
+
+                var cellValue = GetCellValue(cell); 
+                if(string.IsNullOrEmpty(cellValue)) continue;   //empty column
+                
+                if (!headers.TryAdd(columnIndex, cellValue))
+                {
+                    throw new ArgumentException($"duplicated header with column index {columnIndex}");
+                }
+
+                columnIndex++;
             }
 
-            string GetCellValue(Cell cell)
-            {
-                if (cell.CellValue == null) return string.Empty;
-                
-                string value = cell.CellValue.InnerText;
+            return columnIndex;
+        }
+        
+        string GetCellValue(Cell cell)
+        {
+            if (cell.CellValue == null) return string.Empty;
+            
+            string value = cell.CellValue.InnerText;
 
-                if (cell.DataType != null
-                    && cell.DataType.Value == CellValues.SharedString)
-                {
-                    return sharedStringTable.ChildElements[int.Parse(value)].InnerText;
-                }
-                else
-                {
-                    return value;
-                }
+            if (cell.DataType != null
+                && cell.DataType.Value == CellValues.SharedString)
+            {
+                return sharedStringTable.ChildElements[int.Parse(value)].InnerText;
+            }
+            else
+            {
+                return value;
             }
         }
     }
