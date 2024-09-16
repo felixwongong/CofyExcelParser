@@ -152,15 +152,17 @@ public class CofyXmlDocParser
             
             string value = cell.CellValue.InnerText;
 
-            if (cell.DataType != null
-                && cell.DataType.Value == CellValues.SharedString)
-            {
+            if (cell.DataType == null) return value;
+
+            var dataType = cell.DataType.Value;
+            
+            if (dataType == CellValues.SharedString)
                 return sharedStringTable.ChildElements[int.Parse(value)].InnerText;
-            }
-            else
-            {
-                return value;
-            }
+
+            if (dataType == CellValues.Boolean)
+                return value == "0" ? bool.FalseString : bool.TrueString;
+
+            return value;
         }
     }
 }
