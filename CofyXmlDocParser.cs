@@ -3,20 +3,20 @@ using DocumentFormat.OpenXml.Spreadsheet;
 
 namespace CofyDev.Xml.Doc;
 
-public class CofyXmlDocParser
+public static class CofyXmlDocParser
 {
     public const int HEADER_ROW_INDEX = 1;
 
     public class DataObject: Dictionary<string, string>
     {
-        public DataObject subDataObject;
+        public DataObject? subDataObject;
     }
 
     public class DataContainer : List<DataObject>
     {
     }
-    
-    protected virtual byte[] LoadExcelBytes(string filePath)
+
+    private static byte[] LoadExcelBytes(string filePath)
     {
         if (string.IsNullOrEmpty(filePath))
         {
@@ -41,12 +41,12 @@ public class CofyXmlDocParser
         return fileBytes;
     }
 
-    protected virtual bool IsSheetAvailable(Sheet sheet)
+    private static bool IsSheetAvailable(Sheet sheet)
     {
         return sheet.State == null || sheet.State == SheetStateValues.Visible;
     }
     
-    public DataContainer ParseExcel(string filePath)
+    public static DataContainer ParseExcel(string filePath)
     {
         byte[] fileBytes = LoadExcelBytes(filePath);
 
@@ -74,7 +74,7 @@ public class CofyXmlDocParser
         return rootDataContainer;
     }
 
-    protected virtual void ProcessSheet(Worksheet sheet, WorkbookPart workbookPart, in DataContainer rootDataContainer)
+    private static void ProcessSheet(Worksheet sheet, WorkbookPart workbookPart, in DataContainer rootDataContainer)
     {
         var rows = sheet.Descendants<Row>().Where(r => r.RowIndex is not null);
         
