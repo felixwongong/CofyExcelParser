@@ -2,9 +2,23 @@
 
 namespace CofyDev.Xml.Doc;
 
+public class DataObjectEncoder
+{
+    public virtual CofyXmlDocParser.DataObject Encode(object obj)
+    {
+        throw new NotImplementedException();
+    }
+
+    public virtual T DecodeAs<T>(CofyXmlDocParser.DataObject dataObject,
+        Action<FieldInfo, object, string> propertyDecodeSetter)
+    {
+        return DataObjectExtension.DecodeAs<T>(dataObject, propertyDecodeSetter);
+    }
+}
+
 public static class DataObjectExtension
 {
-    public static T DecodeAs<T>(this CofyXmlDocParser.DataObject dataObject, Action<FieldInfo, object, string> propertyDecodeSetter)
+    public static T DecodeAs<T>(CofyXmlDocParser.DataObject dataObject, Action<FieldInfo, object, string> propertyDecodeSetter)
     {
         var objType = typeof(T);
         
