@@ -80,6 +80,11 @@ namespace CofyDev.Xml.Doc
                 parsable = Enum.TryParse(propertyType, rawValue, out var value);
                 if (parsable) fieldInfo.SetValue(obj, value);
             }
+            else if (rawValue == "null")
+            {
+                parsable = true;
+                fieldInfo.SetValue(obj, default);
+            }
             else
             {
                 parsable = true;
