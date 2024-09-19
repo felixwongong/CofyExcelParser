@@ -20,40 +20,13 @@ namespace CofyDev.Xml.Doc
         {
         }
 
-        private static byte[] LoadExcelBytes(string filePath)
-        {
-            if (string.IsNullOrEmpty(filePath))
-            {
-                throw new ArgumentNullException(nameof(filePath), "filename is empty");
-            }
-
-            if (!File.Exists(filePath))
-            {
-                throw new ArgumentNullException(nameof(filePath), "file does not exist");
-            }
-
-            byte[] fileBytes;
-            using var filestream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            fileBytes = new byte[filestream.Length];
-            var byteLoaded = filestream.Read(fileBytes, 0, (int)filestream.Length);
-            if (byteLoaded > filestream.Length)
-            {
-                throw new InvalidOperationException(
-                    $"Detect filestream read size ({filestream.Length} differ from byte load ({byteLoaded}))");
-            }
-
-            return fileBytes;
-        }
-
         private static bool IsSheetAvailable(Sheet sheet)
         {
             return sheet.State == null || sheet.State == SheetStateValues.Visible;
         }
 
-        public static DataContainer ParseExcel(string filePath)
+        public static DataContainer ParseExcel(byte[] fileBytes)
         {
-            byte[] fileBytes = LoadExcelBytes(filePath);
-
             using MemoryStream memoryStream = new MemoryStream(fileBytes);
             using var document = SpreadsheetDocument.Open(memoryStream, false);
 
