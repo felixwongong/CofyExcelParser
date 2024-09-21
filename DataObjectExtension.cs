@@ -4,23 +4,16 @@ using System.Reflection;
 
 namespace CofyDev.Xml.Doc
 {
-    public class DataObjectEncoder
+    public class DataObjectEncoder: IDisposable
     {
+        private Dictionary<string, FieldInfo> _fieldCache = new();
+
         public virtual CofyXmlDocParser.DataObject Encode(object obj)
         {
             throw new NotImplementedException();
         }
 
         public virtual T DecodeAs<T>(CofyXmlDocParser.DataObject dataObject,
-            Action<FieldInfo, object, string> propertyDecodeSetter)
-        {
-            return DataObjectExtension.DecodeAs<T>(dataObject, propertyDecodeSetter);
-        }
-    }
-
-    public static class DataObjectExtension
-    {
-        public static T DecodeAs<T>(CofyXmlDocParser.DataObject dataObject,
             Action<FieldInfo, object, string> propertyDecodeSetter)
         {
             var objType = typeof(T);
@@ -38,7 +31,12 @@ namespace CofyDev.Xml.Doc
                     throw new ArgumentNullException(nameof(key), "dataObject key is empty");
                 }
 
-                var field = objType.GetField(key, BindingFlags.Instance | BindingFlags.Public);
+                if (!_fieldCache.TryGetValue(key, out var field))
+                {
+                    field = objType.GetField(key, BindingFlags.Instance | BindingFlags.Public);
+                    _fieldCache[key] = field;
+                }
+
                 if (field == null)
                 {
                     throw new KeyNotFoundException($"{objType} public field not found for key ({key})");
@@ -50,6 +48,14 @@ namespace CofyDev.Xml.Doc
             return obj;
         }
 
+        public void Dispose()
+        {
+            _fieldCache.Clear();
+        }
+    }
+
+    public static class DataObjectExtension
+    {
         public static void SetDecodePropertyValue(FieldInfo fieldInfo, object obj, string rawValue)
         {
             var propertyType = fieldInfo.FieldType;

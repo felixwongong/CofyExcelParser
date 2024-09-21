@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 
@@ -10,12 +9,17 @@ namespace CofyDev.Xml.Doc
 {
     public static class CofyXmlDocParser
     {
-        public const int HEADER_ROW_INDEX = 1;
-        private static Regex COLUMN_NAME_FILTER = new Regex("[a-zA-Z]");
-
         public class DataObject : Dictionary<string, string>
         {
             public DataObject subDataObject;
+
+            public DataObject() : base()
+            {
+            }
+
+            public DataObject(int capacity) : base(capacity)
+            {
+            }
         }
 
         public class DataContainer : List<DataObject>
@@ -57,26 +61,29 @@ namespace CofyDev.Xml.Doc
         {
             var rows = sheet.Descendants<Row>().Where(r => r.RowIndex is not null);
 
-            var headers = new Dictionary<string, string>(); //<columnName, headerName>
+            Dictionary<string, string> headers = null; //<columnName, headerName>
 
             var sharedStringTable = workbookPart.SharedStringTablePart?.SharedStringTable;
             if (sharedStringTable == null)
             {
                 throw new InvalidOperationException("Detected excel has no shared string stringTable.");
             }
-
+            
+            var rowCellCount = 0;
             foreach (var row in rows)
             {
                 var rowIndex = row.RowIndex?.Value;
                 if (rowIndex == null) continue;
 
-                if (rowIndex == HEADER_ROW_INDEX)
+                if (headers == null)
                 {
-                     ProcessHeaderRow(row);
+                    rowCellCount = row.Count();
+                    headers = new Dictionary<string, string>(rowCellCount);
+                    ProcessHeaderRow(row);
                 }
                 else
                 {
-                    DataObject rowData = new();
+                    DataObject rowData = new(rowCellCount);
                     foreach (var element in row)
                     {
                         if (element is not Cell cell || string.IsNullOrEmpty(cell.CellReference))
@@ -85,7 +92,7 @@ namespace CofyDev.Xml.Doc
                                 $"Detected invalid or non cell element ({element.GetType()}) in row {rowIndex}");
                         }
 
-                        var columnName = COLUMN_NAME_FILTER.Match(cell.CellReference).Value;
+                        var columnName = GetColumnName(cell.CellReference);
                         if (!headers.TryGetValue(columnName, out var key))
                         {
                             throw new KeyNotFoundException($"Header not found for column name {columnName}");
@@ -115,7 +122,7 @@ namespace CofyDev.Xml.Doc
                     var cellValue = GetCellValue(cell);
                     if (string.IsNullOrEmpty(cellValue)) continue; //empty column
 
-                    var columnName = COLUMN_NAME_FILTER.Match(cell.CellReference).Value;
+                    var columnName = GetColumnName(cell.CellReference);
                     if (!headers.TryAdd(columnName, cellValue))
                     {
                         throw new ArgumentException($"duplicated header with column {cell.CellReference}");
@@ -142,6 +149,19 @@ namespace CofyDev.Xml.Doc
                     return value == "0" ? bool.FalseString : bool.TrueString;
 
                 return value;
+            }
+
+            string GetColumnName(string cellReference)
+            {
+                for (var i = 0; i < cellReference.Length; i++)
+                {
+                    if (char.IsLetter(cellReference, i))
+                    {
+                        return cellReference[..(i + 1)];
+                    }
+                }
+
+                return string.Empty;
             }
         }
     }
