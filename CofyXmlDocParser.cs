@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using cfEngine.Pooling;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 
@@ -9,6 +10,11 @@ namespace CofyDev.Xml.Doc
 {
     public static class CofyXmlDocParser
     {
+        public class DataObjectPool : ObjectPool<DataObject>
+        {
+            
+        }
+
         public class DataObject : Dictionary<string, string>
         {
             public DataObject subDataObject;
