@@ -96,7 +96,7 @@ namespace CofyDev.Xml.Doc
                         var columnName = GetColumnName(cell.CellReference);
                         if (!headers.TryGetValue(columnName, out var key))
                         {
-                            throw new KeyNotFoundException($"Header not found for column name {columnName}");
+                            continue;
                         }
 
                         var value = GetCellValue(cell);
@@ -121,7 +121,7 @@ namespace CofyDev.Xml.Doc
                     if (cell.CellReference is { Value: null }) continue;
 
                     var cellValue = GetCellValue(cell);
-                    if (string.IsNullOrEmpty(cellValue)) continue; //empty column
+                    if (string.IsNullOrEmpty(cellValue) || !char.IsLetter(cellValue[0])) continue; //empty column
 
                     var columnName = GetColumnName(cell.CellReference);
                     if (!headers.TryAdd(columnName, cellValue))
