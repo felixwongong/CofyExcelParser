@@ -10,7 +10,7 @@ namespace CofyDev.Xml.Doc
 {
     public static class CofyXmlDocParser
     {
-        public class DataObject : Dictionary<string, string>
+        public class DataObject : Dictionary<string, object>
         {
             public DataObject subDataObject;
 
@@ -89,18 +89,28 @@ namespace CofyDev.Xml.Doc
                     {
                         if (element is not Cell cell || string.IsNullOrEmpty(cell.CellReference))
                         {
-                            throw new InvalidCastException(
-                                $"Detected invalid or non cell element ({element.GetType()}) in row {rowIndex}");
+                            throw new InvalidCastException($"Detected invalid or non cell element ({element.GetType()}) in row {rowIndex}");
                         }
 
                         var columnName = GetColumnName(cell.CellReference);
-                        if (!headers.TryGetValue(columnName, out var key))
-                        {
-                            continue;
-                        }
-
+                        if (!headers.TryGetValue(columnName, out var key)) continue;
+                        
                         var value = GetCellValue(cell);
-                        rowData[key] = value;
+
+                        if (key.Contains("."))
+                        {
+                            if (!rowData.TryGetValue(key, out var obj))
+                            {
+                                obj = new List<string>();
+                                rowData[key] = obj;
+                            }
+                            var list = obj as List<string>;
+                            list?.Add(value);
+                        }
+                        else
+                        {
+                            rowData[key] = value;
+                        }
                     }
 
                     rootDataContainer.Add(rowData);
