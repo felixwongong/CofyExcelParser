@@ -10,12 +10,12 @@ namespace CofyDev.Xml.Doc
     {
         private Dictionary<string, FieldInfo> _fieldCache = new();
 
-        public virtual CofyXmlDocParser.DataObject Encode(object obj)
+        public virtual DataObject Encode(object obj)
         {
             throw new NotImplementedException();
         }
 
-        public virtual T DecodeAs<T>(CofyXmlDocParser.DataObject dataObject, Action<FieldInfo, object, KeyValuePair<string, object>> propertyDecodeSetter)
+        public virtual T DecodeAs<T>(DataObject dataObject, Action<FieldInfo, object, KeyValuePair<string, object>> propertyDecodeSetter)
         {
             var objType = typeof(T);
 

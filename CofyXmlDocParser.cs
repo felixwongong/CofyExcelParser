@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using cfEngine.Pooling;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 
@@ -10,23 +9,6 @@ namespace CofyDev.Xml.Doc
 {
     public static class CofyXmlDocParser
     {
-        public class DataObject : Dictionary<string, object>
-        {
-            public DataObject subDataObject;
-
-            public DataObject() : base()
-            {
-            }
-
-            public DataObject(int capacity) : base(capacity)
-            {
-            }
-        }
-
-        public class DataContainer : List<DataObject>
-        {
-        }
-
         private static bool IsSheetAvailable(Sheet sheet)
         {
             return sheet.State == null || sheet.State == SheetStateValues.Visible;
