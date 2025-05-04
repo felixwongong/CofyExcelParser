@@ -72,7 +72,6 @@ namespace CofyDev.Xml.Doc
         private static void _SetDecodePropertyValue(FieldInfo fieldInfo, ref object fieldObject, KeyValuePair<string, object> kvp)
         {
             var fieldType = fieldInfo.FieldType;
-            var key = kvp.Key;
             var value = kvp.Value;
 
             bool parsable = false;
@@ -134,27 +133,27 @@ namespace CofyDev.Xml.Doc
                     parsable = bool.TryParse(raw, out var v);
                     if (parsable) fieldInfo.SetValue(obj, v);
                 }
-                else if (fieldType == typeof(int))
+                else if (type == typeof(int))
                 {
                     parsable = int.TryParse(raw, out var v);
                     if (parsable) fieldInfo.SetValue(obj, v);
                 }
-                else if (fieldType == typeof(float))
+                else if (type == typeof(float))
                 {
                     parsable = float.TryParse(raw, out var v);
                     if (parsable) fieldInfo.SetValue(obj, v);
                 }
-                else if (fieldType == typeof(double))
+                else if (type == typeof(double))
                 {
                     parsable = double.TryParse(raw, out var v);
                     if (parsable) fieldInfo.SetValue(obj, v);
                 }
-                else if (fieldType.IsEnum)
+                else if (type.IsEnum)
                 {
                     parsable = Enum.TryParse(fieldType, raw, out var v);
                     if (parsable) fieldInfo.SetValue(obj, v);
                 }
-                else if (fieldType == typeof(string))
+                else if (type == typeof(string))
                 {
                     fieldInfo.SetValue(obj, raw);
                     parsable = true;
