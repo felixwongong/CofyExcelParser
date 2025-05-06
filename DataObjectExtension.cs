@@ -8,14 +8,14 @@ namespace CofyDev.Xml.Doc
 {
     public class DataObjectEncoder: IDisposable
     {
-        private Dictionary<string, FieldInfo> _fieldCache = new();
+        private Dictionary<string, PropertyInfo> _propertyCache = new();
 
         public virtual DataObject Encode(object obj)
         {
             throw new NotImplementedException();
         }
 
-        public virtual T DecodeAs<T>(DataObject dataObject, Action<FieldInfo, object, KeyValuePair<string, object>> propertyDecodeSetter)
+        public virtual T DecodeAs<T>(DataObject dataObject, Action<PropertyInfo, object, KeyValuePair<string, object>> propertyDecodeSetter)
         {
             var objType = typeof(T);
 
@@ -27,30 +27,30 @@ namespace CofyDev.Xml.Doc
 
             foreach (var (key, value) in dataObject)
             {
-                var fieldName = key;
-                if (string.IsNullOrEmpty(fieldName))
+                var propertyName = key;
+                if (string.IsNullOrEmpty(propertyName))
                 {
-                    throw new ArgumentNullException(nameof(fieldName), "dataObject key is empty");
+                    throw new ArgumentNullException(nameof(propertyName), "dataObject key is empty");
                 }
                 
                 var separatorIndex = key.IndexOf('.');
                 if (separatorIndex != -1)
                 {
-                    fieldName = key.AsSpan()[..separatorIndex].ToString();
+                    propertyName = key.AsSpan()[..separatorIndex].ToString();
                 }
 
-                if (!_fieldCache.TryGetValue(fieldName, out var field))
+                if (!_propertyCache.TryGetValue(propertyName, out var property))
                 {
-                    field = objType.GetField(fieldName, BindingFlags.Instance | BindingFlags.Public);
-                    _fieldCache[key] = field;
+                    property = objType.GetProperty(propertyName, BindingFlags.Instance | BindingFlags.Public);
+                    _propertyCache[key] = property;
                 }
 
-                if (field == null)
+                if (property == null)
                 {
                     throw new KeyNotFoundException($"{objType} public field not found for key ({key})");
                 }
 
-                propertyDecodeSetter(field, obj, new KeyValuePair<string, object>(key, value));
+                propertyDecodeSetter(property, obj, new KeyValuePair<string, object>(key, value));
             }
 
             return obj;
@@ -58,35 +58,35 @@ namespace CofyDev.Xml.Doc
 
         public void Dispose()
         {
-            _fieldCache.Clear();
+            _propertyCache.Clear();
         }
     }
 
     public static class DataObjectExtension
     {
-        public static void SetDecodePropertyValue(FieldInfo fieldInfo, object fieldObject, KeyValuePair<string, object> kvp)
+        public static void SetDecodePropertyValue(PropertyInfo propertyInfo, object propertyObject, KeyValuePair<string, object> kvp)
         {
-            _SetDecodePropertyValue(fieldInfo, ref fieldObject, kvp);
+            _SetDecodePropertyValue(propertyInfo, ref propertyObject, kvp);
         }
         
-        private static void _SetDecodePropertyValue(FieldInfo fieldInfo, ref object fieldObject, KeyValuePair<string, object> kvp)
+        private static void _SetDecodePropertyValue(PropertyInfo propertyInfo, ref object propertyObject, KeyValuePair<string, object> kvp)
         {
-            var fieldType = fieldInfo.FieldType;
+            var fieldType = propertyInfo.PropertyType;
             var value = kvp.Value;
 
             bool parsable = false;
             if (value is string rawValue)
             {
-                parsable = TryDecodeSingleValue(fieldType, fieldObject, rawValue);
+                parsable = TryDecodeSingleValue(fieldType, propertyObject, rawValue);
             }
             else if (value is IList rawValues)
             {
                 parsable = true;
 
-                if (fieldInfo.GetValue(fieldObject) is not IList list)
+                if (propertyInfo.GetValue(propertyObject) is not IList list)
                 {
                     list = (IList)Activator.CreateInstance(fieldType);
-                    fieldInfo.SetValue(fieldObject, list);
+                    propertyInfo.SetValue(propertyObject, list);
                 }
                 
                 var separatorIndex = kvp.Key.IndexOf('.');
@@ -96,12 +96,12 @@ namespace CofyDev.Xml.Doc
                 }
                 
                 var listItemType = fieldType.GetGenericArguments()[0];
-                var listItemFieldName = kvp.Key.AsSpan()[(separatorIndex + 1)..].ToString();
-                var listItemField = listItemType.GetField(listItemFieldName);
+                var listItemPropertyName = kvp.Key.AsSpan()[(separatorIndex + 1)..].ToString();
+                var listItemProperty = listItemType.GetProperty(listItemPropertyName);
                 
-                if(listItemField == null)
+                if(listItemProperty == null)
                 {
-                    throw new KeyNotFoundException($"{listItemType} public field not found for key ({listItemFieldName})");
+                    throw new KeyNotFoundException($"{listItemType} public field not found for key ({listItemPropertyName})");
                 }
                 
                 for (var i = 0; i < rawValues.Count; i++)
@@ -111,19 +111,19 @@ namespace CofyDev.Xml.Doc
                         list.Add(Activator.CreateInstance(listItemType));
                     }
                     var innerObject = list[i];
-                    _SetDecodePropertyValue(listItemField, ref innerObject, new KeyValuePair<string, object>(listItemFieldName, rawValues[i]));
+                    _SetDecodePropertyValue(listItemProperty, ref innerObject, new KeyValuePair<string, object>(listItemPropertyName, rawValues[i]));
                 }
             }
             else
             {
                 parsable = true;
-                fieldInfo.SetValue(fieldObject, value);
+                propertyInfo.SetValue(propertyObject, value);
             }
 
             if (!parsable)
             {
                 throw new ArgumentException(
-                    $"dataObject value ({value}) cannot parse to {fieldObject.GetType()}'s {fieldType} field {fieldInfo.Name}");
+                    $"dataObject value ({value}) cannot parse to {propertyObject.GetType()}'s {fieldType} field {propertyInfo.Name}");
             }
 
             bool TryDecodeSingleValue(Type type, object obj, string raw)
@@ -131,37 +131,37 @@ namespace CofyDev.Xml.Doc
                 if (type == typeof(bool))
                 {
                     parsable = bool.TryParse(raw, out var v);
-                    if (parsable) fieldInfo.SetValue(obj, v);
+                    if (parsable) propertyInfo.SetValue(obj, v);
                 }
                 else if (type == typeof(int))
                 {
                     parsable = int.TryParse(raw, out var v);
-                    if (parsable) fieldInfo.SetValue(obj, v);
+                    if (parsable) propertyInfo.SetValue(obj, v);
                 }
                 else if (type == typeof(float))
                 {
                     parsable = float.TryParse(raw, out var v);
-                    if (parsable) fieldInfo.SetValue(obj, v);
+                    if (parsable) propertyInfo.SetValue(obj, v);
                 }
                 else if (type == typeof(double))
                 {
                     parsable = double.TryParse(raw, out var v);
-                    if (parsable) fieldInfo.SetValue(obj, v);
+                    if (parsable) propertyInfo.SetValue(obj, v);
                 }
                 else if (type.IsEnum)
                 {
                     parsable = Enum.TryParse(fieldType, raw, out var v);
-                    if (parsable) fieldInfo.SetValue(obj, v);
+                    if (parsable) propertyInfo.SetValue(obj, v);
                 }
                 else if (type == typeof(string))
                 {
-                    fieldInfo.SetValue(obj, raw);
+                    propertyInfo.SetValue(obj, raw);
                     parsable = true;
                 }
                 else if (raw == "null")
                 {
                     parsable = true;
-                    fieldInfo.SetValue(obj, null);
+                    propertyInfo.SetValue(obj, null);
                 }
 
                 return parsable;
