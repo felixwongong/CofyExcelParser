@@ -42,7 +42,7 @@ namespace CofyDev.Xml.Doc
 
         private static void ProcessSheet(Worksheet sheet, WorkbookPart workbookPart, in DataContainer rootDataContainer)
         {
-            var rows = sheet.Descendants<Row>().Where(r => r.RowIndex is not null);
+            var rows = sheet.Descendants<Row>().Where(r => r.RowIndex is not null && r.FirstChild != null && r.FirstChild.Any());
 
             Dictionary<string, string> headers = null; //<columnName, headerName>
 
@@ -60,7 +60,7 @@ namespace CofyDev.Xml.Doc
 
                 if (headers == null)
                 {
-                    rowCellCount = row.Count();
+                    rowCellCount = row.Count(x => x.Any());
                     headers = new Dictionary<string, string>(rowCellCount);
                     ProcessHeaderRow(row);
                 }
@@ -106,8 +106,7 @@ namespace CofyDev.Xml.Doc
                 {
                     if (element is not Cell cell || string.IsNullOrEmpty(cell.CellReference))
                     {
-                        throw new InvalidCastException(
-                            $"Detected invalid or non cell element ({element.GetType()}) in header row");
+                        throw new InvalidCastException($"Detected invalid or non cell element ({element.GetType()}) in header row");
                     }
 
                     if (cell.CellReference is { Value: null }) continue;
