@@ -2,10 +2,8 @@ using System.Collections.Generic;
 
 namespace CofyDev.Xml.Doc
 {
-    public class DataObject : Dictionary<string, object>
+    public partial class DataObject : Dictionary<string, object>
     {
-        public DataObject subDataObject;
-
         public DataObject() : base()
         {
         }
