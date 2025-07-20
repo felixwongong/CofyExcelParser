@@ -4,3 +4,7 @@ obj/
 bin/
 
 *.meta
+
+// Godot ignore
+*.import
+*.uid
