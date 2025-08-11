@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using cfEngine.Logging;
 
 namespace CofyDev.Xml.Doc
 {
@@ -62,7 +61,6 @@ namespace CofyDev.Xml.Doc
                     var rawValue = rawValues[i];
                     if (!Decoder.TryDecode(rawValue, decodedType, out var decodedValue) || decodedValue.GetType() != listItemType)
                     {
-                        Log.LogError($"Failed to decode list item value ({rawValue}) to target type {listItemType}, index: {i}");
                         return false;
                     }
                     list.Add(decodedValue);
