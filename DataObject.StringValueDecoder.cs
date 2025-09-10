@@ -32,7 +32,7 @@ namespace CofyDev.Xml.Doc
             {
                 decoded = null;
                 
-                if(raw is not string rawString || !TryGetStringDecoder(rawString.GetType(), out var decoder))
+                if(raw is not string rawString || !TryGetStringDecoder(decodedType, out var decoder))
                     return false;
                 
                 return decoder.TryDecode(rawString, out decoded);
@@ -74,10 +74,10 @@ namespace CofyDev.Xml.Doc
             public bool TryDecode(string raw, out object decoded)
             {
                 decoded = null;
-                if (!int.TryParse(raw, out var result))
+                if (!float.TryParse(raw, out var result))
                     return false;
                 
-                decoded = result;
+                decoded = Convert.ToInt32(result);
                 return true;
             }
         }
