@@ -9,7 +9,7 @@ namespace CofyDev.Xml.Doc
         {
             public Type propertyType { get; }
 
-            public bool TryDecode(string raw, out object decoded);
+            public bool TryDecode(string? raw, out object? decoded);
         }
 
         public class StringValueDecoder : IValueDecoder
@@ -28,7 +28,7 @@ namespace CofyDev.Xml.Doc
                 RegisterStringDecoder(new StringDecoder());
             }
 
-            public bool TryDecode(object raw, Type decodedType, out object decoded)
+            public bool TryDecode(object raw, Type decodedType, out object? decoded)
             {
                 decoded = null;
                 
@@ -58,7 +58,7 @@ namespace CofyDev.Xml.Doc
         public struct BooleanDecoder: IStringDecoder
         {
             public Type propertyType => typeof(bool);
-            public bool TryDecode(string raw, out object decoded)
+            public bool TryDecode(string? raw, out object? decoded)
             {
                 decoded = null;
                 if (bool.TryParse(raw, out var result))
@@ -71,7 +71,7 @@ namespace CofyDev.Xml.Doc
         public struct IntDecoder: IStringDecoder
         {
             public Type propertyType => typeof(int);
-            public bool TryDecode(string raw, out object decoded)
+            public bool TryDecode(string? raw, out object? decoded)
             {
                 decoded = null;
                 if (!float.TryParse(raw, out var result))
@@ -84,7 +84,7 @@ namespace CofyDev.Xml.Doc
         public struct FloatDecoder: IStringDecoder
         {
             public Type propertyType => typeof(float);
-            public bool TryDecode(string raw, out object decoded)
+            public bool TryDecode(string? raw, out object? decoded)
             {
                 decoded = null;
                 if (!float.TryParse(raw, out var result))
@@ -97,7 +97,7 @@ namespace CofyDev.Xml.Doc
         public struct DoubleDecoder: IStringDecoder
         {
             public Type propertyType => typeof(double);
-            public bool TryDecode(string raw, out object decoded)
+            public bool TryDecode(string? raw, out object? decoded)
             {
                 decoded = null;
                 if (!double.TryParse(raw, out var result))
@@ -110,7 +110,7 @@ namespace CofyDev.Xml.Doc
         public struct StringDecoder: IStringDecoder
         {
             public Type propertyType => typeof(string);
-            public bool TryDecode(string raw, out object decoded)
+            public bool TryDecode(string? raw, out object? decoded)
             {
                 decoded = null;
                 if (raw == "null")
@@ -134,7 +134,7 @@ namespace CofyDev.Xml.Doc
                 _enumType = enumType;
             }
             
-            public bool TryDecode(string raw, out object decoded)
+            public bool TryDecode(string? raw, out object? decoded)
             {
                 decoded = null;
                 if (!Enum.TryParse(_enumType, raw, out var result))

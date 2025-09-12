@@ -65,10 +65,10 @@ namespace CofyDev.Xml.Doc
     {
         public static void SetDecodePropertyValue(PropertyInfo propertyInfo, object propertyObject, KeyValuePair<string, object> kvp)
         {
-            _SetDecodePropertyValue(propertyInfo, ref propertyObject, kvp);
+            _SetDecodePropertyValue(propertyInfo, propertyObject, kvp);
         }
         
-        private static void _SetDecodePropertyValue(PropertyInfo propertyInfo, ref object propertyObject, KeyValuePair<string, object> kvp)
+        private static void _SetDecodePropertyValue(PropertyInfo propertyInfo, in object propertyObject, KeyValuePair<string, object> kvp)
         {
             var propertyType = propertyInfo.PropertyType;
             var value = kvp.Value;

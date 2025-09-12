@@ -79,15 +79,15 @@ namespace CofyDev.Xml.Doc
 						
 						var value = GetCellValue(cell);
 
-						if (key.Contains("."))
+						if (rowData.TryGetValue(key, out var existing))
 						{
-							if (!rowData.TryGetValue(key, out var obj))
+							if (existing is not List<object> existingList)
 							{
-								obj = new List<string>();
-								rowData[key] = obj;
+								existingList = [existing];
+								rowData[key] = existingList;
 							}
-							var list = obj as List<string>;
-							list?.Add(value);
+							
+							existingList.Add(value);
 						}
 						else
 						{

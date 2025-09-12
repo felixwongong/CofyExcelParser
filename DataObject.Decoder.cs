@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using DocumentFormat.OpenXml.Office2010.ExcelAc;
 
 namespace CofyDev.Xml.Doc
 {
@@ -9,20 +10,20 @@ namespace CofyDev.Xml.Doc
         public interface IValueDecoder
         {
             public Type valueType { get; }
-            public bool TryDecode(object raw, Type decodedType, out object decoded);
+            public bool TryDecode(object raw, Type decodedType, out object? decoded);
         }
 
         public static class Decoder
         {
-            private static Dictionary<Type, IValueDecoder> _stringDecoders = new Dictionary<Type, IValueDecoder>();
-            public static IReadOnlyDictionary<Type, IValueDecoder> stringDecoders => _stringDecoders;
+            private static List<IValueDecoder> _decoders = new();
 
             static Decoder()
             {
                 RegisterDecoder(new StringValueDecoder());
+                RegisterDecoder(new ArrayDecoder());
             }
             
-            public static bool TryDecode(object raw, Type decodedType, out object decoded)
+            public static bool TryDecode(object raw, Type decodedType, out object? decoded)
             {
                 decoded = null;
                 if(!TryGetDecoder(raw.GetType(), out var decoder))
@@ -33,40 +34,60 @@ namespace CofyDev.Xml.Doc
             
             public static void RegisterDecoder(IValueDecoder decoder)
             {
-                _stringDecoders.Add(decoder.valueType, decoder);
+                _decoders.Add(decoder);
             }
             
             public static bool TryGetDecoder(Type type, out IValueDecoder decoder)
             {
-                return _stringDecoders.TryGetValue(type, out decoder);
+                decoder = null;
+                try
+                {
+                    decoder = _decoders.First(x => x.valueType.IsAssignableFrom(type));
+                }
+                catch (InvalidOperationException ex)
+                {
+                    Console.WriteLine(ex);
+                    return false;
+                }
+
+                return true;
             }
         }
 
-        public class ListValueDecoder : IValueDecoder
+        public class ArrayDecoder : IValueDecoder
         {
-            public Type valueType => typeof(IList);
-            public bool TryDecode(object raw, Type decodedType, out object decoded)
+            public Type valueType => typeof(Array);
+            public bool TryDecode(object raw, Type decodedType, out object? decoded)
             {
-                decoded = null;
-                if(raw is not IList rawValues)
-                    return false;
-                
-                if (rawValues.Count <= 0)
-                    return true;
-                
-                var listItemType = decodedType.GetGenericArguments()[0];
-                var list = (IList) Activator.CreateInstance(decodedType);
-                for (var i = 0; i < rawValues.Count; i++)
+                if (raw is not Array rawValues || rawValues.Length <= 0)
                 {
-                    var rawValue = rawValues[i];
-                    if (!Decoder.TryDecode(rawValue, decodedType, out var decodedValue) || decodedValue.GetType() != listItemType)
-                    {
-                        return false;
-                    }
-                    list.Add(decodedValue);
+                    decoded = Array.Empty<object>();
+                    return false;
                 }
 
-                decoded = list;
+                var elementType = decodedType.IsArray ? decodedType.GetElementType() : typeof(object);
+                if (elementType == null)
+                {
+                    decoded = Array.Empty<object>();
+                    return false;
+                }
+
+                if(Activator.CreateInstance(decodedType, rawValues.Length) is not Array array)
+                {
+                    decoded = Array.Empty<object>();
+                    return false;
+                }
+                
+                for (int i = 0; i < rawValues.Length; i++)
+                {
+                    var rawValue = rawValues.GetValue(i);
+                    if (rawValue != null && Decoder.TryDecode(rawValue, elementType, out var elementDecoded))
+                    {
+                        array.SetValue(elementDecoded, i);
+                    }
+                }
+
+                decoded = array;
                 return true;
             }
         }
