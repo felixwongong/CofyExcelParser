@@ -8,3 +8,5 @@ bin/
 // Godot ignore
 *.import
 *.uid
+
+*.asmdef
