@@ -83,7 +83,7 @@ namespace CofyDev.Xml.Doc
 						{
 							if (existing is not List<object> existingList)
 							{
-								existingList = [existing];
+								existingList = new List<object> { existing };
 								rowData[key] = existingList;
 							}
 							
