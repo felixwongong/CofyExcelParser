@@ -61,7 +61,7 @@ namespace CofyDev.Xml.Doc
             public bool TryDecode(string? raw, out object? decoded)
             {
                 decoded = null;
-                if (bool.TryParse(raw, out var result))
+                if (!bool.TryParse(raw, out var result))
                     return false;
                 
                 decoded = result;
