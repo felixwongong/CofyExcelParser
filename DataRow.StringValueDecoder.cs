@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace CofyDev.Xml.Doc
 {
-    public partial class DataObject
+    public partial class DataRow
     {
         public interface IStringDecoder 
         {

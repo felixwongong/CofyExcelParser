@@ -9,7 +9,7 @@ namespace CofyDev.Xml.Doc;
 
 public static class CofyXmlDocParser
 {
-    public static DataContainer ParseExcel(byte[] fileBytes)
+    public static DataTable ParseExcel(byte[] fileBytes)
     {
         using var memoryStream = new MemoryStream(fileBytes);
         using var document = SpreadsheetDocument.Open(memoryStream, false);
@@ -22,7 +22,7 @@ public static class CofyXmlDocParser
         if (sharedStringTable == null)
             throw new InvalidOperationException("Detected excel has no shared string stringTable.");
 
-        var rootDataContainer = new DataContainer();
+        var rootDataTable = new DataTable();
         var sheets = workbookPart.Workbook.Descendants<Sheet>().Where(IsSheetAvailable);
 
         foreach (var sheet in sheets)
@@ -33,12 +33,12 @@ public static class CofyXmlDocParser
             var sheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id.Value);
             var rows = ExtractRows(sheetPart.Worksheet, sharedStringTable, sheet.Name);
             var table = new RawSheetTable(sheet.Name, rows);
-            var data = SheetTableConverter.ToDataContainer(table);
+            var data = SheetTableConverter.ToDataTable(table);
             foreach (var item in data)
-                rootDataContainer.Add(item);
+                rootDataTable.Add(item);
         }
 
-        return rootDataContainer;
+        return rootDataTable;
     }
 
     private static bool IsSheetAvailable(Sheet sheet)

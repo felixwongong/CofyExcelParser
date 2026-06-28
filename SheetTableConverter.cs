@@ -5,48 +5,48 @@ namespace CofyDev.Xml.Doc;
 
 public static class SheetTableConverter
 {
-    public static DataContainer ToDataContainer(ISheetTable table)
+    public static DataTable ToDataTable(ISheetTable table)
     {
         if (table == null)
             throw new ArgumentNullException(nameof(table));
 
         var rows = table.Rows;
         if (rows.Count == 0)
-            return new DataContainer();
+            return new DataTable();
 
         var headerRow = rows[0];
         if (headerRow == null || headerRow.Count == 0)
-            return new DataContainer();
+            return new DataTable();
 
         var headerMappings = ParseHeaderMappings(headerRow);
         if (headerMappings.Count == 0)
-            return new DataContainer();
+            return new DataTable();
 
-        var data = new DataContainer();
+        var data = new DataTable();
         for (var rowIndex = 1; rowIndex < rows.Count; rowIndex++)
         {
             var row = rows[rowIndex];
             if (row == null || IsEmptyRow(row))
                 continue;
 
-            var dataObject = new DataObject(headerMappings.Count);
+            var dataRow = new DataRow(headerMappings.Count);
             foreach (var mapping in headerMappings)
             {
                 if (mapping.IsDuplicate)
                 {
                     var values = CollectDuplicateValues(row, mapping.Indices);
                     if (values.Length > 0)
-                        dataObject[mapping.Name] = values;
+                        dataRow[mapping.Name] = values;
                 }
                 else
                 {
                     var value = GetValue(row, mapping.SingleIndex);
                     if (value != null)
-                        dataObject[mapping.Name] = value;
+                        dataRow[mapping.Name] = value;
                 }
             }
 
-            data.Add(dataObject);
+            data.Add(dataRow);
         }
 
         return data;

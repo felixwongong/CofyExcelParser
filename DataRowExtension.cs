@@ -5,16 +5,16 @@ using System.Reflection;
 
 namespace CofyDev.Xml.Doc
 {
-    public class DataObjectEncoder: IDisposable
+    public class DataRowMapper: IDisposable
     {
         private Dictionary<string, PropertyInfo> _propertyCache = new();
 
-        public virtual DataObject Encode(object obj)
+        public virtual DataRow Encode(object obj)
         {
             throw new NotImplementedException();
         }
 
-        public virtual T DecodeAs<T>(DataObject dataObject, Action<PropertyInfo, object, KeyValuePair<string, object>> propertyDecodeSetter)
+        public virtual T DecodeAs<T>(DataRow dataObject, Action<PropertyInfo, object, KeyValuePair<string, object>> propertyDecodeSetter)
         {
             var objType = typeof(T);
 
@@ -61,19 +61,19 @@ namespace CofyDev.Xml.Doc
         }
     }
 
-    public static class DataObjectExtension
+    public static class DataRowExtension
     {
-        public static void SetDecodePropertyValue(PropertyInfo propertyInfo, object propertyObject, KeyValuePair<string, object> kvp)
+        public static void SetPropertyValue(PropertyInfo propertyInfo, object propertyObject, KeyValuePair<string, object> kvp)
         {
-            _SetDecodePropertyValue(propertyInfo, propertyObject, kvp);
+            _SetPropertyValue(propertyInfo, propertyObject, kvp);
         }
         
-        private static void _SetDecodePropertyValue(PropertyInfo propertyInfo, in object propertyObject, KeyValuePair<string, object> kvp)
+        private static void _SetPropertyValue(PropertyInfo propertyInfo, in object propertyObject, KeyValuePair<string, object> kvp)
         {
             var propertyType = propertyInfo.PropertyType;
             var value = kvp.Value;
 
-            if (!DataObject.Decoder.TryDecode(value, propertyType, out var decoded))
+            if (!DataRow.Decoder.TryDecode(value, propertyType, out var decoded))
             {
                 throw new ArgumentException($"dataObject value ({value}) cannot parse to {propertyObject.GetType()}'s {propertyType} field {propertyInfo.Name}");
             }

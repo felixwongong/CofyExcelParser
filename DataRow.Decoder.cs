@@ -6,7 +6,7 @@ using DocumentFormat.OpenXml.Office2010.ExcelAc;
 
 namespace CofyDev.Xml.Doc
 {
-    public partial class DataObject
+    public partial class DataRow
     {
         public interface IValueDecoder
         {
